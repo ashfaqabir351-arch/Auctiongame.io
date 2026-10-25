@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>Auction Tycoon</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;font-family:system-ui,sans-serif;color:#fff;background:radial-gradient(circle at 50% 0,#3a1c5a,#120a24 70%);overflow:hidden}
+.card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:12px;backdrop-filter:blur(8px)}
+h3{margin:0 0 8px;font-size:13px;letter-spacing:2px;opacity:.7;text-transform:uppercase}
+#app{display:none;height:100%;flex-direction:column;gap:10px;padding:10px}
+#hdr{display:flex;justify-content:space-between;align-items:center;font-weight:700;gap:10px;flex-wrap:wrap}
+#cols{flex:1;display:grid;grid-template-columns:240px 1fr 290px;gap:10px;min-height:0}
+#L,#R,#C{min-height:0;overflow:auto}#C{display:flex;flex-direction:column;gap:10px;overflow:hidden}
+#stage{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;min-height:0;overflow:hidden}
+#emo{font-size:min(16vh,120px);line-height:1;animation:drop .6s cubic-bezier(.3,1.6,.5,1),bob 3s ease-in-out .6s infinite}
+@keyframes drop{from{transform:translateY(-120px) scale(.3) rotate(-40deg);opacity:0}}
+@keyframes bob{50%{transform:translateY(-8px) rotate(3deg)}}
+#pedestal{padding:14px 34px;border-radius:50%/30%;background:radial-gradient(var(--rc,#999),transparent 70%);box-shadow:0 0 60px var(--rc,#999)}
+#nm{font-size:24px;font-weight:800}#rar{font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--rc)}
+#est{opacity:.85;font-size:14px;min-height:20px}
+#cur{font-size:clamp(34px,6vw,58px);font-weight:900;color:#fc3;text-shadow:0 0 20px #fc38}
+#cur.bump{animation:bump .3s}@keyframes bump{50%{transform:scale(1.25)}}
+#who{opacity:.9;min-height:22px}
+#bar{width:min(480px,90%);height:10px;border-radius:5px;background:rgba(255,255,255,.15);overflow:hidden}
+#fill{height:100%;background:linear-gradient(90deg,#4f8,#fc0,#f45);transition:width .25s linear}
+#btns{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+button{font:inherit;font-weight:800;border:0;border-radius:12px;padding:10px 16px;cursor:pointer;background:#fc3;color:#241;transition:transform .1s}
+button:hover:not(:disabled){transform:scale(1.06)}button:disabled{opacity:.35;cursor:not-allowed}
+select{font:inherit;padding:6px;border-radius:8px;background:#1a1030;color:#fff;border:2px solid #fc3}.row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+button.alt{background:#7b5cff;color:#fff}button.sell{background:#2ecc71;padding:6px 10px;font-size:13px}
+input{font:inherit;padding:10px;border-radius:10px;border:2px solid #fc3;background:#1a1030;color:#fff;outline:none;width:110px}
+#log{height:150px;overflow:auto;font-size:13px;display:flex;flex-direction:column;gap:3px}
+#log div{animation:pop .25s}@keyframes pop{from{opacity:0;transform:translateX(-10px)}}
+.sys{opacity:.6}.good{color:#5f8}.bad{color:#f77}
+.pr{display:flex;justify-content:space-between;align-items:center;padding:7px 8px;margin-bottom:5px;border-radius:10px;background:rgba(255,255,255,.06);font-size:13px}
+.pr.hi{outline:2px solid #fc3;background:rgba(255,204,51,.15)}.pr.bk{opacity:.4;text-decoration:line-through}
+.pr small{display:block;opacity:.65}
+.it{display:flex;align-items:center;gap:8px;padding:8px;border-radius:12px;margin-bottom:6px;background:rgba(255,255,255,.07);border-left:4px solid var(--rc)}
+.it .e{font-size:30px}.it .i{flex:1;font-size:12px;line-height:1.35}
+.up{color:#5f8}.dn{color:#f77}
+#ov{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(14,8,30,.9);border-radius:16px;padding:16px;z-index:3}
+#ov h2{margin:0;font-size:30px}
+#stamp{position:absolute;z-index:4;font-size:clamp(40px,9vw,80px);font-weight:900;border:8px solid;padding:0 18px;border-radius:10px;pointer-events:none;opacity:0;transform:rotate(-12deg)}
+#stamp.go{animation:stamp 1.4s}@keyframes stamp{0%{opacity:0;transform:rotate(-12deg) scale(3)}15%{opacity:1;transform:rotate(-12deg) scale(1)}80%{opacity:1}100%{opacity:0}}
+body.shake{animation:sh .5s}@keyframes sh{25%{transform:translate(-8px,4px)}50%{transform:translate(8px,-4px)}75%{transform:translate(-5px,2px)}}
+#menu{position:fixed;inset:0;z-index:9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:20px;background:radial-gradient(circle at 50% 0,#3a1c5a,#120a24 70%)}
+#menu h1{font-size:clamp(40px,9vw,80px);margin:0;background:linear-gradient(90deg,#fc3,#f6a,#7b5cff);-webkit-background-clip:text;color:transparent}
+#menu p{max-width:460px;margin:0;opacity:.8;line-height:1.5}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:20}
+@media(max-width:860px){#cols{grid-template-columns:1fr;overflow:auto}#L,#R{max-height:180px;overflow:auto;flex:none}#C{overflow:visible}#stage{min-height:420px}html,body{overflow:auto}}
+</style></head><body>
+<div id="menu"><h1>AUCTION TYCOON</h1>
+ <p>Bid on mystery treasures, sell them when the market is hot, and avoid <b>bankruptcy</b>. Hidden true values, storage fees, debt interest and market swings — highest net worth after 10 rounds wins.</p>
+ <input id="name" maxlength="12" placeholder="Your name" style="text-align:center;width:220px">
+ <div class="row"><button id="hostb">🏠 HOST A GAME</button><button id="solob" class="alt">🤖 SOLO vs BOTS</button></div>
+ <div class="row"><input id="code" maxlength="4" placeholder="CODE" style="width:100px;text-align:center;text-transform:uppercase"><button id="joinb" class="alt">JOIN BY CODE</button></div>
+ <div class="card" style="min-width:270px"><h3>Open games on your network</h3><div id="glist" style="font-size:14px;opacity:.85">Looking…</div></div>
+ <div id="merr" style="color:#f77;min-height:20px"></div></div>
+<div id="app">
+ <div id="hdr" class="card"><span id="rd"></span><span id="mk"></span><span id="you"></span><button id="leave" class="alt" style="padding:6px 12px">Leave</button></div>
+ <div id="cols">
+  <div id="L" class="card"><h3>Bidders</h3><div id="pl"></div></div>
+  <div id="C">
+   <div id="stage" class="card">
+    <div id="pedestal"><div id="emo"></div></div><div id="nm"></div><div id="rar"></div><div id="est"></div>
+    <div id="cur"></div><div id="who"></div><div id="bar"><div id="fill"></div></div>
+    <div id="btns"></div>
+    <div id="stamp"></div><div id="ov"></div>
+   </div>
+   <div id="log" class="card"></div>
+  </div>
+  <div id="R" class="card"><h3>My items — sell anytime</h3><div id="inv"></div></div>
+ </div>
+</div>
+<canvas id="fx"></canvas>
+<script>
+const $=id=>document.getElementById(id),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const RC={common:'#9aa5b1',rare:'#3da5ff',epic:'#b45cff',legendary:'#ffc933'};
+let ws,S=null,lastRound=-1,sigP='',sigI='',sigO='',lastCur=0;
+function wsURL(){let h=location.host;
+  if(!h||location.protocol==='file:'){h=prompt('Type the server address shown in the terminal (example: 192.168.1.5:3002)','localhost:3002');
+    if(!h)return null;h=h.replace(/^(https?|wss?):\/\//,'').replace(/\/+$/,'')}
+  return(location.protocol==='https:'?'wss://':'ws://')+h}
+let inMenu=true;
+const merr=t=>$('merr').textContent=t||'';
+function openWs(cb){
+  if(ws&&ws.readyState===1)return cb();
+  if(!ws||ws.readyState>1){const u=wsURL();if(!u)return;
+    try{ws=new WebSocket(u)}catch(e){merr('Bad server address: '+u);return}
+    ws.onmessage=e=>on(JSON.parse(e.data));
+    ws.onclose=()=>{ws=null;toMenu('Lost connection to the server.')}}
+  ws.addEventListener('open',cb,{once:true})}
+function toMenu(t){inMenu=true;S=null;sigP=sigI=sigO='';lastRound=-1;$('menu').style.display='flex';$('app').style.display='none';merr(t)}
+function toGame(){inMenu=false;merr('');$('menu').style.display='none';$('app').style.display='flex';$('log').innerHTML=''}
+const nm=()=>$('name').value.trim()||'Player';
+$('hostb').onclick=()=>openWs(()=>tx({t:'host',name:nm()}));
+$('solob').onclick=()=>openWs(()=>tx({t:'solo',name:nm()}));
+$('joinb').onclick=()=>openWs(()=>tx({t:'join',name:nm(),code:$('code').value.trim().toUpperCase()}));
+$('leave').onclick=()=>tx({t:'leave'});
+if(location.host&&location.protocol!=='file:')openWs(()=>{});
+setInterval(()=>{if(inMenu&&ws&&ws.readyState===1)tx({t:'list'})},1500);
+const tx=o=>ws&&ws.readyState===1&&ws.send(JSON.stringify(o));
+const $$=n=>'$'+Math.round(n).toLocaleString();
+
+// bid buttons
+const INC=[10,50,100,250];
+INC.forEach(n=>{const b=document.createElement('button');b.dataset.inc=n;b.onclick=()=>tx({t:'bid',amt:nextBid(n)});$('btns').appendChild(b)});
+const ci=document.createElement('input');ci.type='number';ci.placeholder='custom $';$('btns').appendChild(ci);
+const cb=document.createElement('button');cb.className='alt';cb.textContent='BID';cb.onclick=()=>{tx({t:'bid',amt:+ci.value});ci.value=''};$('btns').appendChild(cb);
+const nextBid=n=>Math.max(S.item.start,S.cur+n);
+
+function on(m){
+  if(m.t==='j')toGame();
+  else if(m.t==='left')toMenu(m.text||'');
+  else if(m.t==='err')merr(m.text);
+  else if(m.t==='rooms'){const g=$('glist');
+    g.innerHTML=m.list.length?m.list.map(r=>'<div class="pr"><span>🏠 '+esc(r.host)+'<small>'+r.n+'/6 players · '+r.rounds+' rounds</small></span><button class="sell" data-c="'+r.code+'">JOIN '+r.code+'</button></div>').join(''):'No open games yet — host one!';
+    g.querySelectorAll('button').forEach(b=>b.onclick=()=>tx({t:'join',name:nm(),code:b.dataset.c}))}
+  else if(m.t==='s'){if(!inMenu){S=m;render()}}
+  else if(m.t==='l'){const d=document.createElement('div');d.className=m.k;d.textContent=m.text;$('log').appendChild(d);$('log').scrollTop=1e9}
+  else if(m.t==='fx')fxEvent(m.k)}
+function render(){
+  const s=S,you=s.you,item=s.item;
+  $('rd').textContent=(s.ph==='lobby'?'Lobby':'Round '+s.round+' / '+s.rounds)+' · Room '+s.code;
+  $('mk').innerHTML='Market <b class="'+(s.m>=1?'up':'dn')+'">'+(s.m>=1?'📈 ':'📉 ')+s.m.toFixed(2)+'×</b>';
+  $('you').innerHTML=you.bankrupt?'💀 <b class="dn">BANKRUPT</b>':'Cash <b class="'+(you.cash<0?'dn':'up')+'">'+$$(you.cash)+'</b> <small style="opacity:.6">(credit '+$$(s.credit)+')</small>';
+  // item stage
+  if(item){const c=RC[item.r];$('app').style.setProperty('--rc',c);$('stage').style.setProperty('--rc',c);
+    if(s.round!==lastRound){lastRound=s.round;$('emo').textContent=item.e;const e=$('emo');e.style.animation='none';void e.offsetWidth;e.style.animation='';}
+    $('nm').textContent=item.n;$('rar').textContent=item.r;
+    $('est').innerHTML=s.ph==='sold'||s.ph==='over'?'True value <b>'+$$(item.val)+'</b> · market price <b>'+$$(item.mv)+'</b>':
+      '🔍 Appraiser says <b>'+$$(item.lo)+' – '+$$(item.hi)+'</b> · opens at '+$$(item.start)}
+  else{$('emo').textContent='🔨';$('nm').textContent='Auction House';$('rar').textContent='';$('est').textContent=''}
+  const cur=$('cur');cur.textContent=s.cur>0?$$(s.cur):(s.ph==='auction'?'No bids':'');
+  if(s.cur!==lastCur){cur.classList.remove('bump');void cur.offsetWidth;cur.classList.add('bump');lastCur=s.cur}
+  $('who').textContent=s.ph==='sold'?s.sale:(s.hb?'👑 '+s.hbn+(s.hb===s.me?' (you)':''):'');
+  $('fill').style.width=(s.ph==='auction'?s.tl/15*100:0)+'%';
+  document.querySelectorAll('#btns button[data-inc]').forEach(b=>{const n=+b.dataset.inc,a=item?nextBid(n):0;
+    b.textContent='+'+n+(item?'  →'+$$(a):'');b.disabled=!(s.ph==='auction'&&!you.bankrupt&&s.hb!==s.me&&a<=you.cash+s.credit)});
+  cb.disabled=!(s.ph==='auction'&&!you.bankrupt&&s.hb!==s.me);$('btns').style.visibility=s.ph==='auction'?'visible':'hidden';
+  // players
+  const sp=JSON.stringify([s.pl,s.hb]);if(sp!==sigP){sigP=sp;
+    $('pl').innerHTML=[...s.pl].sort((a,b)=>b[4]-a[4]).map(p=>'<div class="pr'+(p[0]===s.hb&&s.ph==='auction'?' hi':'')+(p[6]?' bk':'')+'"><span>'+p[2]+' '+esc(p[1])+(p[0]===s.me?' (you)':'')+
+      '<small>'+p[5]+' items</small></span><span style="text-align:right"><b>'+$$(p[4])+'</b><small>cash '+$$(p[3])+'</small></span></div>').join('')}
+  // inventory
+  const si=JSON.stringify(you.inv);if(si!==sigI){sigI=si;
+    $('inv').innerHTML=you.inv.length?you.inv.map(i=>{const d=i.mv-i.cost;return'<div class="it" style="--rc:'+RC[i.r]+'"><span class="e">'+i.e+'</span><span class="i"><b>'+esc(i.n)+'</b><br>bought '+$$(i.cost)+' · now '+$$(i.mv)+
+      '<br><b class="'+(d>=0?'up':'dn')+'">'+(d>=0?'+':'−')+$$(Math.abs(d)).slice(1)+'</b></span><button class="sell" data-u="'+i.u+'">SELL</button></div>'}).join(''):'<div style="opacity:.5;font-size:13px">Win auctions to collect items, then sell when the market is high!</div>';
+    document.querySelectorAll('.sell').forEach(b=>b.onclick=()=>tx({t:'sell',u:+b.dataset.u}))}
+  overlay(s)}
+function overlay(s){const ov=$('ov');
+  if(s.ph==='lobby'){const so=JSON.stringify(['L',s.pl,s.host,s.cfg]);if(so===sigO)return;sigO=so;ov.style.display='flex';
+    const host=s.host===s.me,addr=(ws&&ws.url||'').replace(/^wss?:\/\//,'').replace(/\/$/,'');
+    const sel=(id,vals,cv,f)=>host?'<select id="'+id+'">'+vals.map(v=>'<option value="'+v+'"'+(v===cv?' selected':'')+'>'+f(v)+'</option>').join('')+'</select>':'<b>'+f(cv)+'</b>';
+    ov.innerHTML='<h2>🔨 Room <span style="color:#fc3;letter-spacing:6px">'+s.code+'</span></h2>'+
+      '<div style="opacity:.8;font-size:14px;text-align:center">Friends on your Wi-Fi: open <b>http://'+esc(addr)+'</b><br>then pick this game or enter code <b>'+s.code+'</b></div>'+
+      '<div style="width:min(340px,90%)">'+s.pl.map(p=>'<div class="pr"><span>'+p[2]+' '+esc(p[1])+(p[0]===s.host?' 👑 host':'')+(p[7]?' (bot)':'')+(p[0]===s.me?' (you)':'')+'</span>'+(host&&p[0]!==s.me&&!p[7]?'<button class="sell" style="background:#f55;color:#fff" data-k="'+p[0]+'">✖ KICK</button>':'')+'</div>').join('')+'</div>'+
+      '<div>Rounds '+sel('cr',[5,10,15],s.cfg.rounds,v=>v)+' &nbsp; Start cash '+sel('cc',[500,1000,2000],s.cfg.cash,v=>'$'+v)+'</div>'+
+      (host?'<div class="row"><button id="b1" class="alt">+ Bot</button><button id="b2" class="alt">− Bot</button><button id="b3"'+(s.pl.length<2?' disabled':'')+'>▶ START</button></div>':'<div style="opacity:.8">⏳ Waiting for the host to start…</div>')+
+      '<button id="bl" class="alt" style="padding:6px 14px">Leave room</button>';
+    if(host){$('b1').onclick=()=>tx({t:'addbot'});$('b2').onclick=()=>tx({t:'rembot'});$('b3').onclick=()=>tx({t:'start'});
+      $('cr').onchange=$('cc').onchange=()=>tx({t:'cfg',rounds:+$('cr').value,cash:+$('cc').value});
+      ov.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>tx({t:'kick',id:+b.dataset.k}))}
+    $('bl').onclick=()=>tx({t:'leave'})}
+  else if(s.ph==='over'&&s.res){sigO='';ov.style.display='flex';
+    ov.innerHTML='<h2>🏆 '+(s.res[0][3]?'Nobody survived!':esc(s.res[0][0])+' wins!')+'</h2>'+s.res.map((r,i)=>'<div class="pr" style="width:300px'+(r[3]?';opacity:.5':'')+'"><span>'+(i+1)+'. '+r[1]+' '+esc(r[0])+'</span><b>'+(r[3]?'💀 BANKRUPT':$$(r[2]))+'</b></div>').join('')+
+      '<div style="opacity:.6;font-size:13px">Back to the room lobby in '+s.rt+'s…</div>'}
+  else{sigO='';ov.style.display='none'}}
+
+// effects
+const fc=$('fx').getContext('2d');let P=[];
+function sz(){$('fx').width=innerWidth;$('fx').height=innerHeight}addEventListener('resize',sz);sz();
+function burst(ch,n,x,y){x=x??innerWidth/2;y=y??innerHeight/2.4;for(let i=0;i<n;i++)P.push({x,y,vx:(Math.random()-.5)*16,vy:-Math.random()*14-2,l:1,ch,s:16+Math.random()*18,r:Math.random()*6})}
+function stamp(t,c){const e=$('stamp');e.textContent=t;e.style.color=c;e.style.borderColor=c;e.classList.remove('go');void e.offsetWidth;e.classList.add('go')}
+function fxEvent(k){
+  if(k==='sold'){stamp('SOLD!','#fc3');burst('🪙',30)}
+  else if(k==='bust'){stamp('BANKRUPT','#f44');burst('💸',30);document.body.classList.remove('shake');void document.body.offsetWidth;document.body.classList.add('shake')}
+  else if(k==='win'){burst('🎉',60);burst('✨',60);burst('🏆',12)}
+  else if(k==='cash')burst('💰',14,innerWidth*.85,innerHeight*.4)}
+(function loop(){fc.clearRect(0,0,innerWidth,innerHeight);
+  for(let i=P.length-1;i>=0;i--){const p=P[i];p.x+=p.vx;p.y+=p.vy;p.vy+=.45;p.l-=.012;if(p.l<=0){P.splice(i,1);continue}
+    fc.globalAlpha=Math.min(1,p.l*2);fc.font=p.s+'px serif';fc.fillText(p.ch,p.x,p.y)}
+  requestAnimationFrame(loop)})();
+</script></body></html>
